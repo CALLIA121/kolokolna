@@ -1,0 +1,95 @@
+#include <Servo.h>
+
+#define SERVO_PIN_1 13
+#define SERVO_PIN_2 2
+#define SERVO_PIN_3 3
+#define SERVO_PIN_4 4
+
+#define HIT_ANGLE_1 105
+#define HIT_ANGLE_2 50
+#define HIT_ANGLE_3 86
+#define HIT_ANGLE_4 64
+
+#define IDLE_ANGLE_1 60
+#define IDLE_ANGLE_2 87
+#define IDLE_ANGLE_3 50
+#define IDLE_ANGLE_4 40
+
+#define TIME_TO_BIT 120
+
+Servo servo1;
+Servo servo2;
+Servo servo3;
+Servo servo4;
+
+void setup() {
+  // Инициализация сервоприводов
+  servo1.attach(SERVO_PIN_1);
+  servo2.attach(SERVO_PIN_2);
+  servo3.attach(SERVO_PIN_3);
+  servo4.attach(SERVO_PIN_4);
+
+  // Установка сервоприводов в idle позицию
+  servo1.write(IDLE_ANGLE_1);
+  servo2.write(IDLE_ANGLE_2);
+  servo3.write(IDLE_ANGLE_3);
+  servo4.write(IDLE_ANGLE_4);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+
+    if (command.startsWith("PLAY:")) {
+      playMelody(command.substring(5));
+    }
+  }
+}
+
+void playMelody(String melody) {
+  int bitLength = melody.toInt();
+  melody = melody.substring(melody.indexOf(':') + 1);
+  int delayTime = melody.toInt();
+  melody = melody.substring(melody.indexOf(':') + 1);
+
+  Serial.println("Status 2"); // Отправляем статус "играет"
+
+  for (int i = 0; i < bitLength; i++) {
+    int bit1 = melody.charAt(i * 4) - '0';
+    int bit2 = melody.charAt(i * 4 + 1) - '0';
+    int bit3 = melody.charAt(i * 4 + 2) - '0';
+    int bit4 = melody.charAt(i * 4 + 3) - '0';
+
+    play(delayTime, bit1, bit2, bit3, bit4);
+    Serial.print("bit,");
+    Serial.print(i);
+    Serial.print(",");
+    Serial.print(bit1);
+    Serial.print(bit2);
+    Serial.print(bit3);
+    Serial.println(bit4);
+  
+    
+  }
+
+  Serial.println("Status 1"); // Отправляем статус "готов"
+}
+
+void play(int time, int bit1, int bit2, int bit3, int bit4) {
+  if (bit1 == 1) servo1.write(HIT_ANGLE_1);
+  if (bit2 == 1) servo2.write(HIT_ANGLE_2);
+  if (bit3 == 1) servo3.write(HIT_ANGLE_3);
+  if (bit4 == 1) servo4.write(HIT_ANGLE_4);
+
+  delay(TIME_TO_BIT);
+
+  servo1.write(IDLE_ANGLE_1);
+  servo2.write(IDLE_ANGLE_2);
+  servo3.write(IDLE_ANGLE_3);
+  servo4.write(IDLE_ANGLE_4);
+
+  delay(time - TIME_TO_BIT);
+}
